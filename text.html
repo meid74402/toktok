@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MnET</title>
+  <style>
+    body {
+      background: linear-gradient(to bottom, black, yellow);
+      padding: 0;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow-x: hidden;
+    }
+    .container {
+      background: #fff8c4;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      margin: 80px auto 0;
+      /* تثبيت لوحة إضافة البيانات دون تغيير باقي الكود الأصلي */
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+    input, button, textarea {
+      width: 90%;
+      margin: 10px 0;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #ffc107;
+      color: black;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #ff9800;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: black;
+    }
+    /* تبويبات النوافذ الأصلية */
+    .report-tab, .income-tab, .phone-tab, .reservation-tab {
+      position: absolute;
+      top: 10px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .report-tab { right: 10px; }
+    .income-tab { right: 130px; }
+    .phone-tab { left: 10px; }
+    .reservation-tab { left: 130px; }
+    /* تبويب حالة العميل */
+    .customer-tab {
+      position: absolute;
+      top: 10px;
+      left: 250px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    /* تبويب تسجيل صاحب التوكتوك */
+    .owner-tab {
+      position: absolute;
+      top: 10px;
+      left: 370px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    /* حاويات النوافذ الأصلية */
+    .report-container, .income-container, .phone-container, .reservation-container {
+      display: none;
+      position: absolute;
+      top: 40px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      width: 250px;
+    }
+    /* حاوية حالة العميل التفصيلية */
+    .customer-container {
+      display: none;
+      position: absolute;
+      top: 40px;
+      left: 250px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      width: 250px;
+    }
+    /* حاوية تسجيل صاحب التوكتوك */
+    .owner-container {
+      display: none;
+      position: absolute;
+      top: 40px;
+      left: 370px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      width: 250px;
+    }
+    /* باقي التنسيقات */
+    .phone-container { left: 10px; }
+    .reservation-container { left: 130px; }
+    .reservation-item {
+      background: #f1f1f1;
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+      text-align: right;
+    }
+    .reservation-item button {
+      width: auto;
+      margin: 0 2px;
+      font-size: 12px;
+      padding: 2px 5px;
+    }
+    .dots-container {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      width: 100%;
+      text-align: left;
+      pointer-events: none;
+      padding-left: 10px;
+    }
+    .mnet {
+      display: inline-block;
+      font-size: 20px;
+      font-weight: bold;
+      color: #000;
+      opacity: 0;
+    }
+    .animate {
+      opacity: 1;
+      animation: moveRightQuick 5s linear forwards;
+    }
+    @keyframes moveRightQuick {
+      from { transform: translateX(0); }
+      to { transform: translateX(100vw); }
+    }
+    .active-panel {
+      position: static !important;
+      margin-top: 60px;
+    }
+    .eye-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #fff;
+      border: 2px solid #ccc;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 1100;
+    }
+  </style>
+</head>
+<body>
+  <!-- تبويبات النوافذ الأصلية -->
+  <div class="report-tab" onclick="toggleReport()">📊 التقارير اليومية</div>
+  <div class="income-tab" onclick="toggleIncome()">💰 دخل التوكتوك</div>
+  <div class="phone-tab" onclick="togglePhone()">📞 أرقام الهواتف</div>
+  <div class="reservation-tab" onclick="toggleReservations()">📋 الحجوزات</div>
+  <div class="customer-tab" onclick="toggleCustomer()">👤 حالة عميل</div>
+  <div class="owner-tab" onclick="toggleOwner()">🛺 صاحب التوكتوك</div>
+
+  <!-- حاويات النوافذ الأصلية -->
+  <div class="report-container" id="reportContainer">
+    <h3>التقارير اليومية</h3>
+    <input type="number" id="earnings" placeholder="التحصيلات (جنيه)">
+    <input type="number" id="commission" placeholder="العمولات (جنيه)">
+    <input type="number" id="dailySalary" placeholder="الراتب اليومي (جنيه)">
+    <button onclick="calculateSalary()">حساب الراتب الشهري</button>
+    <p class="result" id="salaryResult"></p>
+  </div>
+
+  <div class="income-container" id="incomeContainer">
+    <h3>دخل التوكتوك</h3>
+    <input type="number" id="dailyIncome" placeholder="عملت كام النهارده (جنيه)">
+    <input type="number" id="fuelCost" placeholder="فولت التوكتوك بكام(جنيه)">
+    <input type="number" id="maintenanceCost" placeholder="تكلفة الصيانة (جنيه)">
+    <button onclick="calculateNetIncome()">حساب الدخل الصافي</button>
+    <p class="result" id="netIncomeResult"></p>
+  </div>
+
+  <div class="phone-container" id="phoneContainer">
+    <h3>أرقام الهواتف المحفوظة</h3>
+    <input type="text" id="phoneNumber" placeholder="أدخل رقم الهاتف">
+    <button onclick="savePhoneNumber()">حفظ الرقم</button>
+    <ul id="phoneList"></ul>
+  </div>
+
+  <div class="reservation-container" id="reservationContainer">
+    <h3>الحجوزات</h3>
+    <ul id="reservationList"></ul>
+  </div>
+  
+  <div class="customer-container" id="customerContainer">
+    <h3>حالة العميل التفصيلية</h3>
+    <input type="text" id="customerName" placeholder="اسم العميل">
+    <input type="text" id="customerMobile" placeholder="رقم الموبايل">
+    <input type="text" id="customerID" placeholder="الرقم القومي">
+    <input type="number" id="customerAge" placeholder="السن">
+    <textarea id="customerAddress" placeholder="العنوان بالتفصيل"></textarea>
+    <button onclick="saveCustomerDetails()">حفظ بيانات العميل</button>
+  </div>
+  
+  <!-- حاوية تسجيل صاحب التوكتوك -->
+  <div class="owner-container" id="ownerContainer">
+    <h3>تسجيل صاحب التوكتوك</h3>
+    <input type="text" id="ownerName" placeholder="اسم صاحب التوكتوك">
+    <input type="text" id="ownerMobile" placeholder="رقم الموبايل">
+    <input type="text" id="ownerNationalID" placeholder="الرقم القومي">
+    <input type="text" id="ownerWhatsApp" placeholder="رقم الواتساب">
+    <input type="text" id="ownerHomeAddress" placeholder="عنوان المنزل">
+    <input type="text" id="ownerCountry" placeholder="اسم البلد">
+    <input type="text" id="ownerGovernorate" placeholder="اسم المحافظة">
+    <input type="text" id="ownerLandmark" placeholder="علامة مميزة جمب البيت">
+    <button onclick="saveOwnerDetails()">حفظ بيانات صاحب التوكتوك</button>
+  </div>
+  
+  <!-- الحاوية الرئيسية لإضافة بيانات الرحلة (تبقى مثبتة في الأعلى) -->
+  <div class="container">
+    <h2>MnET_مشوارك مستنيك</h2>
+    <input type="text" id="pickup" placeholder="مكانك فين">
+    <input type="text" id="destination" placeholder="المكان الي هتروحه">
+    <input type="number" id="price" placeholder="حدد السعر (10 جنيه فأكثر)" min="10">
+    <input type="time" id="time" placeholder="حدد وقت الرحلة" step="1">
+    <button onclick="bookTukTuk()">احجز الآن</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <!-- حاوية النص المتحرك في أسفل الصفحة -->
+  <div class="dots-container" id="dotsContainer">
+    <span class="mnet">MnET</span>
+  </div>
+  
+  <!-- لوحة العين لحفظ/عرض بيانات العميل التفصيلية -->
+  <div class="eye-toggle" onclick="toggleCustomer()">👁</div>
+
+  <script>
+    // دالة تغلق جميع النوافذ
+    function closeAllPanels() {
+      const panels = ['reportContainer', 'incomeContainer', 'phoneContainer', 'reservationContainer', 'customerContainer', 'ownerContainer'];
+      panels.forEach(id => {
+        let el = document.getElementById(id);
+        el.style.display = "none";
+        el.classList.remove("active-panel");
+      });
+      document.querySelector('.report-tab').style.backgroundColor = "";
+      document.querySelector('.income-tab').style.backgroundColor = "";
+      document.querySelector('.phone-tab').style.backgroundColor = "";
+      document.querySelector('.reservation-tab').style.backgroundColor = "";
+      document.querySelector('.customer-tab').style.backgroundColor = "";
+      document.querySelector('.owner-tab').style.backgroundColor = "";
+    }
+
+    function toggleReport() {
+      let reportContainer = document.getElementById('reportContainer');
+      let reportTab = document.querySelector('.report-tab');
+      if(reportContainer.style.display === "block") {
+        reportContainer.style.display = "none";
+        reportTab.style.backgroundColor = "";
+      } else {
+        closeAllPanels();
+        reportContainer.style.display = "block";
+        reportContainer.classList.add("active-panel");
+        reportTab.style.backgroundColor = "green";
+      }
+    }
+    
+    function toggleIncome() {
+      let incomeContainer = document.getElementById('incomeContainer');
+      let incomeTab = document.querySelector('.income-tab');
+      if(incomeContainer.style.display === "block") {
+        incomeContainer.style.display = "none";
+        incomeTab.style.backgroundColor = "";
+      } else {
+        closeAllPanels();
+        incomeContainer.style.display = "block";
+        incomeContainer.classList.add("active-panel");
+        incomeTab.style.backgroundColor = "green";
+      }
+    }
+
+    function togglePhone() {
+      let phoneContainer = document.getElementById('phoneContainer');
+      let phoneTab = document.querySelector('.phone-tab');
+      if(phoneContainer.style.display === "block") {
+        phoneContainer.style.display = "none";
+        phoneTab.style.backgroundColor = "";
+      } else {
+        closeAllPanels();
+        phoneContainer.style.display = "block";
+        phoneContainer.classList.add("active-panel");
+        phoneTab.style.backgroundColor = "green";
+      }
+    }
+    
+    function toggleReservations() {
+      let reservationContainer = document.getElementById('reservationContainer');
+      let reservationTab = document.querySelector('.reservation-tab');
+      if(reservationContainer.style.display === "block") {
+        reservationContainer.style.display = "none";
+        reservationTab.style.backgroundColor = "";
+      } else {
+        closeAllPanels();
+        reservationContainer.style.display = "block";
+        reservationContainer.classList.add("active-panel");
+        reservationTab.style.backgroundColor = "green";
+      }
+    }
+    
+    function toggleCustomer() {
+      let customerContainer = document.getElementById('customerContainer');
+      let customerTab = document.querySelector('.customer-tab');
+      if(customerContainer.style.display === "block") {
+        customerContainer.style.display = "none";
+        customerTab.style.backgroundColor = "";
+      } else {
+        closeAllPanels();
+        customerContainer.style.display = "block";
+        customerContainer.classList.add("active-panel");
+        customerTab.style.backgroundColor = "green";
+      }
+    }
+    
+    function toggleOwner() {
+      let ownerContainer = document.getElementById('ownerContainer');
+      let ownerTab = document.querySelector('.owner-tab');
+      if(ownerContainer.style.display === "block") {
+        ownerContainer.style.display = "none";
+        ownerTab.style.backgroundColor = "";
+      } else {
+        closeAllPanels();
+        ownerContainer.style.display = "block";
+        ownerContainer.classList.add("active-panel");
+        ownerTab.style.backgroundColor = "green";
+      }
+    }
+    
+    function bookTukTuk() {
+      let pickup = document.getElementById('pickup').value.trim();
+      let destination = document.getElementById('destination').value.trim();
+      let price = parseFloat(document.getElementById('price').value);
+      let time = document.getElementById('time').value;
+      
+      if (pickup === "" || destination === "" || isNaN(price) || time === "") {
+        document.getElementById('result').innerText = "يرجى إدخال جميع البيانات بشكل صحيح";
+        return;
+      }
+      if (price < 10) {
+        document.getElementById('result').innerText = "السعر يجب أن يكون 10 جنيه فأكثر";
+        return;
+      }
+      
+      let booking = { pickup, destination, price, time };
+      let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+      bookings.push(booking);
+      localStorage.setItem("bookings", JSON.stringify(bookings));
+      
+      document.getElementById('result').innerText = "تم حفظ الحجز بنجاح!";
+      displayReservations();
+      showDotsAnimation();
+      
+      document.getElementById('pickup').value = "";
+      document.getElementById('destination').value = "";
+      document.getElementById('price').value = "";
+      document.getElementById('time').value = "";
+    }
+
+    function calculateSalary() {
+      let dailySalary = parseFloat(document.getElementById('dailySalary').value);
+      if (isNaN(dailySalary)) {
+        document.getElementById('salaryResult').innerText = "يرجى إدخال الراتب اليومي بشكل صحيح";
+        return;
+      }
+      let monthlySalary = dailySalary * 30;
+      document.getElementById('salaryResult').innerText = `الراتب الشهري المتوقع: ${monthlySalary} جنيه`;
+    }
+
+    function calculateNetIncome() {
+      let dailyIncome = parseFloat(document.getElementById('dailyIncome').value);
+      let fuelCost = parseFloat(document.getElementById('fuelCost').value);
+      let maintenanceCost = parseFloat(document.getElementById('maintenanceCost').value);
+      if (isNaN(dailyIncome) || isNaN(fuelCost) || isNaN(maintenanceCost)) {
+        document.getElementById('netIncomeResult').innerText = "يرجى إدخال جميع البيانات بشكل صحيح";
+        return;
+      }
+      let netIncome = dailyIncome - (fuelCost + maintenanceCost);
+      document.getElementById('netIncomeResult').innerText = `الدخل الصافي: ${netIncome} جنيه`;
+    }
+
+    function savePhoneNumber() {
+      let phoneInput = document.getElementById('phoneNumber');
+      if (phoneInput.value.trim() === "") return;
+      let phoneList = document.getElementById('phoneList');
+      let newPhone = document.createElement('li');
+      newPhone.innerText = phoneInput.value;
+      phoneList.appendChild(newPhone);
+      phoneInput.value = "";
+    }
+    
+    function displayReservations() {
+      let reservationList = document.getElementById('reservationList');
+      reservationList.innerHTML = "";
+      let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+      bookings.forEach((booking, index) => {
+        let li = document.createElement("li");
+        li.className = "reservation-item";
+        li.innerText = `حجز ${index + 1}: من "${booking.pickup}" إلى "${booking.destination}" بسعر ${booking.price} جنيه في وقت ${booking.time}`;
+        
+        let editBtn = document.createElement("button");
+        editBtn.innerText = "تعديل";
+        editBtn.onclick = function() { editReservation(index); };
+        
+        let deleteBtn = document.createElement("button");
+        deleteBtn.innerText = "مسح";
+        deleteBtn.onclick = function() { deleteReservation(index); };
+        
+        li.appendChild(editBtn);
+        li.appendChild(deleteBtn);
+        reservationList.appendChild(li);
+      });
+    }
+    
+    function deleteReservation(index) {
+      let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+      bookings.splice(index, 1);
+      localStorage.setItem("bookings", JSON.stringify(bookings));
+      displayReservations();
+    }
+    
+    function editReservation(index) {
+      let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+      let booking = bookings[index];
+      
+      let newPickup = prompt("أدخل مكان الانطلاق الجديد:", booking.pickup);
+      if(newPickup === null || newPickup.trim() === "") return;
+      let newDestination = prompt("أدخل الوجهة الجديدة:", booking.destination);
+      if(newDestination === null || newDestination.trim() === "") return;
+      let newPrice = prompt("أدخل السعر الجديد (10 جنيه فأكثر):", booking.price);
+      newPrice = parseFloat(newPrice);
+      if(isNaN(newPrice) || newPrice < 10) {
+        alert("السعر غير صحيح");
+        return;
+      }
+      let newTime = prompt("أدخل وقت الرحلة الجديد (مثال: 14:30):", booking.time);
+      if(newTime === null || newTime.trim() === "") return;
+      
+      bookings[index] = { pickup: newPickup.trim(), destination: newDestination.trim(), price: newPrice, time: newTime.trim() };
+      localStorage.setItem("bookings", JSON.stringify(bookings));
+      displayReservations();
+    }
+    
+    function saveCustomerDetails() {
+      let name = document.getElementById('customerName').value.trim();
+      let mobile = document.getElementById('customerMobile').value.trim();
+      let id = document.getElementById('customerID').value.trim();
+      let age = document.getElementById('customerAge').value.trim();
+      let address = document.getElementById('customerAddress').value.trim();
+      if(name === "" || mobile === "" || id === "" || age === "" || address === "") {
+        alert("يرجى إدخال كافة بيانات العميل");
+        return;
+      }
+      let customer = {name, mobile, id, age, address};
+      let customerList = JSON.parse(localStorage.getItem("customerDetailsList")) || [];
+      customerList.push(customer);
+      localStorage.setItem("customerDetailsList", JSON.stringify(customerList));
+      alert("تم حفظ بيانات العميل");
+      // تم حذف عرض بيانات العملاء المحفوظة
+    }
+    
+    function saveOwnerDetails() {
+      let ownerName = document.getElementById('ownerName').value.trim();
+      let ownerMobile = document.getElementById('ownerMobile').value.trim();
+      let ownerNationalID = document.getElementById('ownerNationalID').value.trim();
+      let ownerWhatsApp = document.getElementById('ownerWhatsApp').value.trim();
+      let ownerHomeAddress = document.getElementById('ownerHomeAddress').value.trim();
+      let ownerCountry = document.getElementById('ownerCountry').value.trim();
+      let ownerGovernorate = document.getElementById('ownerGovernorate').value.trim();
+      let ownerLandmark = document.getElementById('ownerLandmark').value.trim();
+      if(ownerName === "" || ownerMobile === "" || ownerNationalID === "" || ownerWhatsApp === "" ||
+         ownerHomeAddress === "" || ownerCountry === "" || ownerGovernorate === "" || ownerLandmark === "") {
+        alert("يرجى إدخال كافة بيانات صاحب التوكتوك");
+        return;
+      }
+      let owner = { ownerName, ownerMobile, ownerNationalID, ownerWhatsApp, ownerHomeAddress, ownerCountry, ownerGovernorate, ownerLandmark };
+      let ownerList = JSON.parse(localStorage.getItem("ownerDetailsList")) || [];
+      ownerList.push(owner);
+      localStorage.setItem("ownerDetailsList", JSON.stringify(ownerList));
+      alert("تم حفظ بيانات صاحب التوكتوك");
+    }
+    
+    function showDotsAnimation() {
+      const mnet = document.querySelector('.mnet');
+      mnet.classList.remove('animate');
+      void mnet.offsetWidth;
+      mnet.classList.add('animate');
+    }
+    
+    window.onload = function() {
+      displayReservations();
+    }
+  </script>
+</body>
+</html>
